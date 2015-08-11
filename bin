@@ -9,9 +9,11 @@ var path = require('path');
 var root = process.cwd();
 
 var load = argv._[0];
-var project = argv._[1];
+var date = argv._[1];
+var time = argv._[2];
+var project = argv._[3];
+
 var w = argv.w;
-var i
 
 var twstatBlog = {};
 
@@ -50,7 +52,7 @@ twstatBlog.build = function(load, w) {
     // clear blog posts
     fs.removeSync(post_path);
 
-    core.watch(blogPage, {
+    return core.watch(blogPage, {
       cwd: root,
       serve: root,
       output: root,
@@ -66,49 +68,64 @@ twstatBlog.build = function(load, w) {
       }
     })
     .then(function() {
-      genghis.build(blog_setting_path, true)
-      .catch(function(err) {
-        console.error(err);
-      })
-      .done();
+      return genghis.build(blog_setting_path, true)
+        .catch(function(err) {
+          console.error(err);
+        })
+        .done();
     })
     .catch(function(err) {
       console.error(err);
     })
-    .done();
   }
 }
 
-twstatBlog.init = function(load, project) {
-  var list_path = path.join(process.cwd(), 'blog.json')
-  var lists = require(list_path);
+twstatBlog.init = function(load, date, time, project) {
+  var date_reg = /(\d{4}\/\d{2}\/\d{2})/g;
+  var time_reg = /(\d{2}):(\d{2}):(\d{2})/g;
 
-  lists.posts.unshift({
-    "title": project,
-    "date": "2015/08/11 11:10:27",
-    "categories": [""],
-    "tags": [""],
-    "cover": "/assets/article_images/2015-08-11/" + project + "-cover.png",
-    "content": "./posts/2015-08-11-" + project + ".md",
-    "url_name": project,
-    "author": "taiwanstat"
-  })
+  var parse_d = date_reg.exec(date);
+  var parse_t = time_reg.exec(time);
 
-  var new_file = path.join(process.cwd(), "./posts/2015-08-11-" + project + ".md");
+  if(parse_d && parse_t) {
 
-  if(!fs.existsSync(new_file))
-    fs.copy(path.join(__dirname, 'init.md'), new_file, function(err) {if(err) return console.error(err)})
+    var list_path = path.join(process.cwd(), 'blog.json')
+    var lists = require(list_path);
 
-  console.log('Init your project: ' + new_file);
-  fs.writeFileSync(list_path, JSON.stringify(lists, null, 2))
-  console.log('Add your project to blog.json: ' + list_path)
+    lists.posts.unshift({
+      "title": project,
+      "date": date + " " + time,
+      "categories": [""],
+      "tags": [""],
+      "cover": "/assets/article_images/" + date + "/" + project + "-cover.png",
+      "content": "./posts/" + date + "-" + project + ".md",
+      "url_name": project,
+      "author": "taiwanstat"
+    })
+
+    var new_file = path.join(process.cwd(), "./posts/" + date.replace(/\//g, '-') + "-" + project + ".md");
+
+    if(!fs.existsSync(new_file))
+      fs.copy(path.join(__dirname, 'init.md'), new_file, function(err) {if(err) return console.error(err)})
+
+    console.log('Init your project: ' + new_file);
+    fs.writeFileSync(list_path, JSON.stringify(lists, null, 2))
+    console.log('Add your project to blog.json: ' + list_path)
+
+  }else if(!parse_d && parse_t) {
+    throw new Error('Please check your date strings, format should be like "2015/08/03"')
+  }else if(parse_d && !parse_t) {
+    throw new Error('Please check your time strings, format should be like "22:07:39"')
+  }else if(!parse_d && !parse_t) {
+    throw new Error('Please check your date strings, format should be like "2015/08/03", and time should be like "22:07:39"')
+  }
 }
 
-if(load === 'init' && project) {
+if(load === 'init' && date && time && project) {
   // init project
-  twstatBlog.init(load, project)
-}else if (load === 'init' && !project) {
-  throw new Error("Usage: twstatBlog init <project name>");
+  twstatBlog.init(load, date, time, project)
+}else if (load === 'init' && (!project || !date || !time)) {
+  throw new Error("Usage: twstatBlog init <YYYY/MM/DD> <hh:mm:ss> <project name>");
 }else {
   if(load && w){
     twstatBlog.build(load, w);

@@ -14,7 +14,7 @@ sudo npm install -g twstat-blog
 First of all, go to your `taiwanstat.com` repo's root folder and enter the command.
 
 ```
-twstatBlog
+twstatblog
 ```
 
 #### watch project
@@ -28,7 +28,13 @@ twstatblog -w
 #### Init your project
 
 ```
-twstatblog init test
+twstatblog init <date> <time> <name>
+```
+
+for example
+
+```
+twstatblog init 2015/08/11 11:10:27 test
 ```
 
 this command will extend a new object in `blog.json`
