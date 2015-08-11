@@ -1,0 +1,32 @@
+{
+  "name": "twstat-blog",
+  "version": "0.0.1",
+  "description": "cli tool for taiwanstat blog",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "twstatblog": "./bin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TaiwanStat/twstat-blog-cli.git"
+  },
+  "keywords": [
+    "taiwanstat",
+    "canner"
+  ],
+  "author": "chilijung <chilijung@gmail.com> (http://lijung.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TaiwanStat/twstat-blog-cli/issues"
+  },
+  "homepage": "https://github.com/TaiwanStat/twstat-blog-cli",
+  "dependencies": {
+    "canner-core": "0.0.7",
+    "fs-extra": "^0.23.0",
+    "genghis": "^0.1.8",
+    "minimist": "^1.1.3"
+  }
+}

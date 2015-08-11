@@ -1,0 +1,122 @@
+#!/usr/bin/env node
+
+var core = require('canner-core');
+var genghis = require('genghis');
+var argv = require('minimist')(process.argv.slice(2));
+
+var fs = require('fs-extra');
+var path = require('path');
+var root = process.cwd();
+
+var load = argv._[0];
+var project = argv._[1];
+var w = argv.w;
+var i
+
+var twstatBlog = {};
+
+twstatBlog.build = function(load, w) {
+
+  if(load)
+    var root = path.resolve(process.cwd(), load);
+
+  var blogPage = require(path.join(root, 'page.js'));
+  var blogPosts = require(path.join(root, 'blog.json'));
+
+  var blog_setting_path = path.join(root, 'blog.json');
+  var post_path = path.resolve(blogPosts.post_settings.path);
+
+  if(!w) {
+
+    // clear blog posts
+    core.build(blogPage, {
+      cwd: root,
+      output: root
+    })
+    .then(function() {
+      genghis.build(blog_setting_path)
+      .catch(function(err) {
+        console.error(err)
+      })
+      .done();
+    })
+    .catch(function(err) {
+      console.error(err);
+    })
+    .done();
+
+  }else {
+
+    // clear blog posts
+    fs.removeSync(post_path);
+
+    core.watch(blogPage, {
+      cwd: root,
+      serve: root,
+      output: root,
+      reloader: function() {
+        return blogPage;
+      },
+      changeFilter: function (row, f, curr, prev) {
+        if(path.extname(f) === '.html') {
+          return (f === path.resolve(root, row.layout));
+        }else if (path.extname(f) === '.md') {
+          return (f === path.resolve(root, row.data.content));
+        }
+      }
+    })
+    .then(function() {
+      genghis.build(blog_setting_path, true)
+      .catch(function(err) {
+        console.error(err);
+      })
+      .done();
+    })
+    .catch(function(err) {
+      console.error(err);
+    })
+    .done();
+  }
+}
+
+twstatBlog.init = function(load, project) {
+  var list_path = path.join(process.cwd(), 'blog.json')
+  var lists = require(list_path);
+
+  lists.posts.unshift({
+    "title": project,
+    "date": "2015/08/11 11:10:27",
+    "categories": [""],
+    "tags": [""],
+    "cover": "/assets/article_images/2015-08-11/" + project + "-cover.png",
+    "content": "./posts/2015-08-11-" + project + ".md",
+    "url_name": project,
+    "author": "taiwanstat"
+  })
+
+  var new_file = path.join(process.cwd(), "./posts/2015-08-11-" + project + ".md");
+
+  if(!fs.existsSync(new_file))
+    fs.copy(path.join(__dirname, 'init.md'), new_file, function(err) {if(err) return console.error(err)})
+
+  console.log('Init your project: ' + new_file);
+  fs.writeFileSync(list_path, JSON.stringify(lists, null, 2))
+  console.log('Add your project to blog.json: ' + list_path)
+}
+
+if(load === 'init' && project) {
+  // init project
+  twstatBlog.init(load, project)
+}else if (load === 'init' && !project) {
+  throw new Error("Usage: twstatBlog init <project name>");
+}else {
+  if(load && w){
+    twstatBlog.build(load, w);
+  }else if(load && !w){
+    twstatBlog.build(load);
+  }else if(!load && w) {
+    twstatBlog.build('./', w)
+  }else if(!load && !w) {
+    twstatBlog.build('./')
+  }
+}
